@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERASync Dashboard</title>
+    <!-- Uses your own style.css so the theme matches the login page -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Hidden until the sign-in/role check passes (see protectPage in auth-common.js) -->
+    <style>body { visibility: hidden; }</style>
+</head>
+<body>
+    <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+        <h1>ERASync</h1>
+        <p style="margin-bottom:5px;">User Dashboard</p>
+        <p id="welcome" style="margin-bottom:20px;"></p>
+        <button id="logout" class="google-btn" style="width:auto;padding:10px 30px;">Log out</button>
+    </div>
+
+    <script type="module">
+        import { protectPage, logout } from "./auth-common.js";
+
+        protectPage(["user", "admin"], (user, role) => {
+            document.getElementById("welcome").textContent =
+                "Welcome, " + (user.displayName || user.email) + " (" + user.email + ")";
+        });
+
+        document.getElementById("logout").addEventListener("click", logout);
+    </script>
+</body>
+</html>
