@@ -19,9 +19,9 @@ const passwordInput = document.getElementById("password");
 loginForm.addEventListener("submit", (event) => {
     event.preventDefault();
 
-    if (usernameInput.Value === "" || passwordInput.value === "") {
+    if (usernameInput.value.trim() === "" || passwordInput.value.trim() === "") {
         alert("Please fill in both username and Password!");
     } else {
-        alert("Welcome, " + usernameInput.Value + "!");
+        alert("Welcome, " + usernameInput.value.trim() + "!");
     }
 });

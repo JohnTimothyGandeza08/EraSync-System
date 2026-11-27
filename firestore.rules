@@ -1,0 +1,59 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Allow verified NEU Google accounts only.
+    function isSchoolUser() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.firebase.sign_in_provider == "google.com"
+        && request.auth.token.email.lower().matches("[^@]+@neu\\.edu\\.ph");
+    }
+
+    // Check whether the account is approved.
+    function isApproved() {
+      return isSchoolUser()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.approved == true;
+    }
+
+    // Check authorized Admin privileges.
+    function isAdmin() {
+      return isApproved()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
+    }
+
+    match /users/{uid} {
+
+      // Users can read their own profile.
+      // Approved administrators can read user profiles.
+      allow read: if isSchoolUser()
+        && (request.auth.uid == uid || isAdmin());
+
+      // New accounts are unapproved by default.
+      allow create: if isSchoolUser()
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly([
+          "email", "displayName", "role",
+          "approved", "createdAt", "lastLogin"
+        ])
+        && request.resource.data.role == "user"
+        && request.resource.data.approved == false
+        && request.resource.data.email == request.auth.token.email;
+
+      // Prevent users from changing their role or approval status.
+      allow update: if isSchoolUser()
+        && request.auth.uid == uid
+        && request.resource.data.diff(resource.data)
+          .affectedKeys().hasOnly(["displayName", "lastLogin"]);
+
+      allow delete: if false;
+    }
+
+    // Block unauthorized access to other collections.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
